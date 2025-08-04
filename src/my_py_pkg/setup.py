@@ -29,7 +29,8 @@ setup(
             "add_two_ints_server = my_py_pkg.add_two_ints_server:main",
             "add_two_ints_client_no_oop = my_py_pkg.add_two_ints_client_no_oop:main",
             "add_two_ints_client = my_py_pkg.add_two_ints_client:main",
-            "ros2_template = my_py_pkg.ros2_template:main"
+            "ros2_template = my_py_pkg.ros2_template:main",
+            "dynamic_launcher = my_py_pkg.dynamic_launcher:main"
         ],
     },
 )
