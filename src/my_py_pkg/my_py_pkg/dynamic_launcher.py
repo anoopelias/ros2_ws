@@ -9,6 +9,8 @@ from launch import LaunchService, LaunchDescription
 from launch_ros.actions import Node as LaunchNode
 from launch.events.process import ShutdownProcess
 from launch.events.matchers import matches_action
+from launch.event_handlers import OnProcessStart, OnProcessExit
+from functools import partial
 import threading
 import asyncio
 
@@ -61,6 +63,18 @@ class DynamicLauncher(Node):
 
                 # Create launch description for the node
                 launch_description = LaunchDescription([node_action])
+
+                # Add event handlers for process start and exit
+                start_handler = launch.actions.RegisterEventHandler(OnProcessStart(
+                    target_action=node_action,
+                    on_start=partial(self.start_callback, node_name)))
+
+                exit_handler = launch.actions.RegisterEventHandler(OnProcessExit(
+                    target_action=node_action,
+                    on_exit=partial(self.stop_callback, node_name)))
+
+                launch_description.add_action(start_handler)
+                launch_description.add_action(exit_handler)
 
                 # Add to launch service
                 self.launch_service.include_launch_description(launch_description)
@@ -130,6 +144,20 @@ class DynamicLauncher(Node):
             self.get_logger().error(f'Error stopping node: {e}')
 
         return response
+
+    def start_callback(self, node_name, event, context):
+        """Callback when process starts"""
+        self.get_logger().info(f'Node process started: {node_name}')
+        status_msg = String()
+        status_msg.data = f'Process started for node: {node_name}'
+        self.status_publisher.publish(status_msg)
+
+    def stop_callback(self, node_name, event, context):
+        """Callback when process exits"""
+        self.get_logger().info(f'Node process exited: {node_name}')
+        status_msg = String()
+        status_msg.data = f'Process exited for node: {node_name}'
+        self.status_publisher.publish(status_msg)
 
     def set_launch_service(self, launch_service):
         """Set the launch service from main thread"""
